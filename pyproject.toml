@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "phish-payload-gen"
+version = "1.0.0"
+description = "Authorized phishing-simulation content generator with misuse made structurally impossible: refuses to render without a signed authorization reference, only targets verified in-scope domains, watermarks every artifact, and NEVER implements credential capture — it logs the click and stops."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "vinzabe", email = "gabejar@usa.com" }]
+keywords = ["security", "phishing-simulation", "awareness-training", "pentest", "authorized-testing"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Information Technology",
+  "Topic :: Security",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov", "hypothesis>=6", "mypy>=1.8", "ruff>=0.5"]
+
+[project.scripts]
+phishgen = "phishgen.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/vinzabe/phish-payload-gen"
+Issues = "https://github.com/vinzabe/phish-payload-gen/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/phishgen"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["phishgen"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ARG"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402", "S101", "ARG001", "ARG002", "ARG005", "F841"]

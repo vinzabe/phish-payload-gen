@@ -1,0 +1,39 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e ".[dev]"
+      - name: ruff
+        run: ruff check src tests
+      - name: mypy (strict)
+        run: mypy --strict src/phishgen
+      - name: tests + coverage
+        run: pytest --cov=phishgen --cov-report=term-missing --cov-fail-under=88
+
+  guardrails:
+    # The structural guarantees must hold: no render without auth, no out-of-scope
+    # target, and the landing page must never contain a credential form.
+    runs-on: ubuntu-latest
+    env: { PHISHGEN_SECRET: ci-secret }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python -m pip install -e .
+      - name: in-scope generates, out-of-scope is refused
+        run: |
+          python -m phishgen authorize --engagement E1 --approver Jane --scope corp.example.com --expires 2027-01-01 > /tmp/auth.json
+          python -m phishgen --store /tmp/pg.db generate /tmp/auth.json --template password-expiry --target alice@corp.example.com > /dev/null
+          python -m phishgen --store /tmp/pg.db generate /tmp/auth.json --template password-expiry --target victim@gmail.com && exit 1 || echo "out-of-scope correctly refused"
